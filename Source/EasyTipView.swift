@@ -1,3 +1,4 @@
+//#LIFE
 //
 // EasyTipView.swift
 //
