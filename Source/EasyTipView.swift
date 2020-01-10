@@ -219,6 +219,7 @@ open class EasyTipView: UIView {
             public var borderWidth         = CGFloat(0)
             public var borderColor         = UIColor.clear
             public var font                = UIFont.systemFont(ofSize: 15)
+            public var boldFont            = UIFont.boldSystemFont(ofSize: 17)
             public var shadowColor         = UIColor.clear
             public var shadowOffset        = CGSize(width: 0.0, height: 0.0)
             public var shadowRadius        = CGFloat(0)
@@ -263,12 +264,15 @@ open class EasyTipView: UIView {
     private enum Content: CustomStringConvertible {
         
         case text(String)
+        case textWithTitle(String, String)
         case view(UIView)
         
         var description: String {
             switch self {
             case .text(let text):
                 return "text : '\(text)'"
+            case .textWithTitle(let title, let body):
+                return "title : \(title), body : \(body)"
             case .view(let contentView):
                 return "view : \(contentView)"
             }
@@ -324,11 +328,47 @@ open class EasyTipView: UIView {
             }
             
             return textSize
-            
+        case .textWithTitle(let title, let body):
+            let titleAndBodySize = self.getTitleAndBodySize(title: title, body: body)
+            let combinedSize = CGSize(width: titleAndBodySize.1.width, height: titleAndBodySize.0.height + titleAndBodySize.1.height)
+            return combinedSize
         case .view(let contentView):
             return contentView.frame.size
         }
         }()
+    
+    fileprivate lazy var titleAndBodySize: (CGSize, CGSize) = {
+        guard case .textWithTitle(let title, let body) = content else { return (.zero, .zero) }
+        return self.getTitleAndBodySize(title: title, body: body)
+    }()
+    
+    private func getTitleAndBodySize(title: String, body: String) -> (CGSize, CGSize) {
+        #if swift(>=4.2)
+        var titleFont = [NSAttributedString.Key.font : self.preferences.drawing.font]
+        var bodyFont = [NSAttributedString.Key.font : self.preferences.drawing.boldFont]
+        #else
+        var titleFont = [NSAttributedStringKey.font : self.preferences.drawing.font]
+        var bodyFont = [NSAttributedStringKey.font : self.preferences.drawing.boldFont]
+        #endif
+        
+        var titleSize = title.boundingRect(with: CGSize(width: self.preferences.positioning.maxWidth, height: CGFloat.greatestFiniteMagnitude), options: NSStringDrawingOptions.usesLineFragmentOrigin, attributes: titleFont, context: nil).size
+        var bodySize = body.boundingRect(with: CGSize(width: self.preferences.positioning.maxWidth, height: CGFloat.greatestFiniteMagnitude), options: NSStringDrawingOptions.usesLineFragmentOrigin, attributes: bodyFont, context: nil).size
+        
+        titleSize.width = ceil(titleSize.width)
+        titleSize.height = ceil(titleSize.height)
+        bodySize.width = ceil(bodySize.width)
+        bodySize.height = ceil(bodySize.height)
+        
+        if titleSize.width < self.preferences.drawing.arrowWidth {
+            titleSize.width = self.preferences.drawing.arrowWidth
+        }
+        
+        if bodySize.width < self.preferences.drawing.arrowWidth {
+            bodySize.width = self.preferences.drawing.arrowWidth
+        }
+        
+        return (titleSize, bodySize)
+    }
 
     fileprivate lazy var tipViewSize: CGSize = {
         
@@ -344,6 +384,10 @@ open class EasyTipView: UIView {
     public static var globalPreferences = Preferences()
     
     // MARK:- Initializer -
+    
+    public convenience init (title: String, body: String, preferences: Preferences = EasyTipView.globalPreferences, delegate: EasyTipViewDelegate? = nil) {
+        self.init(content: .textWithTitle(title, body), preferences: preferences, delegate: delegate)
+    }
     
     public convenience init (text: String, preferences: Preferences = EasyTipView.globalPreferences, delegate: EasyTipViewDelegate? = nil) {
         self.init(content: .text(text), preferences: preferences, delegate: delegate)
@@ -620,6 +664,26 @@ open class EasyTipView: UIView {
         text.draw(in: textRect, withAttributes: attributes)
     }
     
+    fileprivate func drawTextWithTitle(_ bubbleFrame: CGRect, context : CGContext) {
+        guard case .textWithTitle(let title, let body) = content else { return }
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = preferences.drawing.textAlignment
+        paragraphStyle.lineBreakMode = NSLineBreakMode.byWordWrapping
+        
+        let titleAndBodyRect = getContentRectWithTitle(from: bubbleFrame)
+        
+        #if swift(>=4.2)
+        let titleFont = [NSAttributedString.Key.font : preferences.drawing.font, NSAttributedString.Key.foregroundColor : preferences.drawing.foregroundColor, NSAttributedString.Key.paragraphStyle : paragraphStyle]
+        let bodyFont = [NSAttributedString.Key.font : preferences.drawing.boldFont, NSAttributedString.Key.foregroundColor : preferences.drawing.foregroundColor, NSAttributedString.Key.paragraphStyle : paragraphStyle]
+        #else
+        let titleFont = [NSAttributedStringKey.font : preferences.drawing.font, NSAttributedStringKey.foregroundColor : preferences.drawing.foregroundColor, NSAttributedStringKey.paragraphStyle : paragraphStyle]
+        let bodyFont = [NSAttributedStringKey.font : preferences.drawing.boldFont, NSAttributedStringKey.foregroundColor : preferences.drawing.foregroundColor, NSAttributedStringKey.paragraphStyle : paragraphStyle]
+        #endif
+        
+        title.draw(in: titleAndBodyRect.0, withAttributes: titleFont)
+        body.draw(in: titleAndBodyRect.1, withAttributes: bodyFont)
+    }
+    
     fileprivate func drawShadow() {
         if preferences.hasShadow {
             self.layer.masksToBounds = false
@@ -641,6 +705,8 @@ open class EasyTipView: UIView {
         
         switch content {
         case .text:
+            drawText(bubbleFrame, context: context)
+        case .textWithTitle:
             drawText(bubbleFrame, context: context)
         case .view (let view):
             addSubview(view)
@@ -679,5 +745,20 @@ open class EasyTipView: UIView {
     
     private func getContentRect(from bubbleFrame: CGRect) -> CGRect {
         return CGRect(x: bubbleFrame.origin.x + (bubbleFrame.size.width - contentSize.width) / 2, y: bubbleFrame.origin.y + (bubbleFrame.size.height - contentSize.height) / 2, width: contentSize.width, height: contentSize.height)
+    }
+    
+    private func getContentRectWithTitle(from bubbleFrame: CGRect) -> (CGRect, CGRect) {
+        let x = bubbleFrame.origin.x + (bubbleFrame.size.width - contentSize.width) / 2
+        let y = bubbleFrame.origin.y + (bubbleFrame.size.height - contentSize.height) / 2
+        
+        let titleHeight = titleAndBodySize.0.height
+        let bodyHeight = titleAndBodySize.1.height
+        
+        let bodyStartPosY = y + titleHeight
+    
+        let titleRect = CGRect(x: x, y: y, width: contentSize.width, height: titleHeight)
+        let bodyRect = CGRect(x: x, y: bodyStartPosY, width: contentSize.width, height: bodyHeight)
+        
+        return (titleRect, bodyRect)
     }
 }
