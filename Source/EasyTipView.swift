@@ -344,11 +344,11 @@ open class EasyTipView: UIView {
     
     private func getTitleAndBodySize(title: String, body: String) -> (CGSize, CGSize) {
         #if swift(>=4.2)
-        var titleFont = [NSAttributedString.Key.font : self.preferences.drawing.boldFont]
-        var bodyFont = [NSAttributedString.Key.font : self.preferences.drawing.font]
+        let titleFont = [NSAttributedString.Key.font : self.preferences.drawing.boldFont]
+        let bodyFont = [NSAttributedString.Key.font : self.preferences.drawing.font]
         #else
-        var titleFont = [NSAttributedStringKey.font : self.preferences.drawing.boldFont]
-        var bodyFont = [NSAttributedStringKey.font : self.preferences.drawing.font]
+        let titleFont = [NSAttributedStringKey.font : self.preferences.drawing.boldFont]
+        let bodyFont = [NSAttributedStringKey.font : self.preferences.drawing.font]
         #endif
         
         var titleSize = title.boundingRect(with: CGSize(width: self.preferences.positioning.maxWidth, height: CGFloat.greatestFiniteMagnitude), options: NSStringDrawingOptions.usesLineFragmentOrigin, attributes: titleFont, context: nil).size
