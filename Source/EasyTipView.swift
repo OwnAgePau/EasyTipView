@@ -344,11 +344,11 @@ open class EasyTipView: UIView {
     
     private func getTitleAndBodySize(title: String, body: String) -> (CGSize, CGSize) {
         #if swift(>=4.2)
-        var titleFont = [NSAttributedString.Key.font : self.preferences.drawing.font]
-        var bodyFont = [NSAttributedString.Key.font : self.preferences.drawing.boldFont]
+        var titleFont = [NSAttributedString.Key.font : self.preferences.drawing.boldFont]
+        var bodyFont = [NSAttributedString.Key.font : self.preferences.drawing.font]
         #else
-        var titleFont = [NSAttributedStringKey.font : self.preferences.drawing.font]
-        var bodyFont = [NSAttributedStringKey.font : self.preferences.drawing.boldFont]
+        var titleFont = [NSAttributedStringKey.font : self.preferences.drawing.boldFont]
+        var bodyFont = [NSAttributedStringKey.font : self.preferences.drawing.font]
         #endif
         
         var titleSize = title.boundingRect(with: CGSize(width: self.preferences.positioning.maxWidth, height: CGFloat.greatestFiniteMagnitude), options: NSStringDrawingOptions.usesLineFragmentOrigin, attributes: titleFont, context: nil).size
@@ -673,11 +673,11 @@ open class EasyTipView: UIView {
         let titleAndBodyRect = getContentRectWithTitle(from: bubbleFrame)
         
         #if swift(>=4.2)
-        let titleFont = [NSAttributedString.Key.font : preferences.drawing.font, NSAttributedString.Key.foregroundColor : preferences.drawing.foregroundColor, NSAttributedString.Key.paragraphStyle : paragraphStyle]
-        let bodyFont = [NSAttributedString.Key.font : preferences.drawing.boldFont, NSAttributedString.Key.foregroundColor : preferences.drawing.foregroundColor, NSAttributedString.Key.paragraphStyle : paragraphStyle]
+        let titleFont = [NSAttributedString.Key.font : preferences.drawing.boldFont, NSAttributedString.Key.foregroundColor : preferences.drawing.foregroundColor, NSAttributedString.Key.paragraphStyle : paragraphStyle]
+        let bodyFont = [NSAttributedString.Key.font : preferences.drawing.font, NSAttributedString.Key.foregroundColor : preferences.drawing.foregroundColor, NSAttributedString.Key.paragraphStyle : paragraphStyle]
         #else
-        let titleFont = [NSAttributedStringKey.font : preferences.drawing.font, NSAttributedStringKey.foregroundColor : preferences.drawing.foregroundColor, NSAttributedStringKey.paragraphStyle : paragraphStyle]
-        let bodyFont = [NSAttributedStringKey.font : preferences.drawing.boldFont, NSAttributedStringKey.foregroundColor : preferences.drawing.foregroundColor, NSAttributedStringKey.paragraphStyle : paragraphStyle]
+        let titleFont = [NSAttributedStringKey.font : preferences.drawing.boldFont, NSAttributedStringKey.foregroundColor : preferences.drawing.foregroundColor, NSAttributedStringKey.paragraphStyle : paragraphStyle]
+        let bodyFont = [NSAttributedStringKey.font : preferences.drawing.font, NSAttributedStringKey.foregroundColor : preferences.drawing.foregroundColor, NSAttributedStringKey.paragraphStyle : paragraphStyle]
         #endif
         
         title.draw(in: titleAndBodyRect.0, withAttributes: titleFont)
@@ -707,7 +707,7 @@ open class EasyTipView: UIView {
         case .text:
             drawText(bubbleFrame, context: context)
         case .textWithTitle:
-            drawText(bubbleFrame, context: context)
+            drawTextWithTitle(bubbleFrame, context: context)
         case .view (let view):
             addSubview(view)
         }
