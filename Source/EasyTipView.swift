@@ -330,7 +330,8 @@ open class EasyTipView: UIView {
             return textSize
         case .textWithTitle(let title, let body):
             let titleAndBodySize = self.getTitleAndBodySize(title: title, body: body)
-            let combinedSize = CGSize(width: titleAndBodySize.1.width, height: titleAndBodySize.0.height + titleAndBodySize.1.height)
+            let maxWidth = max(titleAndBodySize.0.width, titleAndBodySize.1.width)
+            let combinedSize = CGSize(width: maxWidth, height: titleAndBodySize.0.height + titleAndBodySize.1.height)
             return combinedSize
         case .view(let contentView):
             return contentView.frame.size
